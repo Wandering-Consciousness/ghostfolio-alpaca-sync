@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  ghostfolio-alpaca-sync:
+    build: .
+    container_name: ghostfolio-alpaca-sync
+    env_file:
+      - .env
+    restart: unless-stopped
+    environment:
+      # Alpaca API Configuration
+      - ALPACA_API_KEY=${ALPACA_API_KEY}
+      - ALPACA_SECRET_KEY=${ALPACA_SECRET_KEY}
+      - ALPACA_BASE_URL=${ALPACA_BASE_URL:-https://paper-api.alpaca.markets}
+
+      # Ghostfolio Configuration
+      - GHOST_HOST=${GHOST_HOST:-https://ghostfol.io}
+      - GHOST_TOKEN=${GHOST_TOKEN}
+      - GHOST_KEY=${GHOST_KEY}
+      - GHOST_ACCOUNT_NAME=${GHOST_ACCOUNT_NAME:-Alpaca}
+      - GHOST_CURRENCY=${GHOST_CURRENCY:-USD}
+
+      # Operation Mode
+      - OPERATION=${OPERATION:-SYNC_ALPACA}
+
+      # Cron Schedule (optional - leave empty for one-time run)
+      - CRON=${CRON}
+    volumes:
+      - ./mapping.yaml:/usr/app/src/mapping.yaml:ro

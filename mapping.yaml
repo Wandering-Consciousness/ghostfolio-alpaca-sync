@@ -1,0 +1,7 @@
+# Symbol mapping from Alpaca symbols to Ghostfolio-compatible symbols
+# Format: ALPACA_SYMBOL: GHOSTFOLIO_SYMBOL
+symbol_mapping:
+  # Add your custom symbol mappings here
+  # Example:
+  # AAPL: AAPL
+  # BTC/USD: BTCUSD
