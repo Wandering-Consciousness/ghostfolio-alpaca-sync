@@ -21,6 +21,38 @@ Automatically sync your Alpaca trading activities to Ghostfolio portfolio tracke
 | INT* | INTEREST | Interest payments |
 | FEE, CFEE | FEE | Fees and commissions |
 
+## Crypto Trading Fee Handling
+
+This sync tool implements **automatic crypto trading fee adjustment** to ensure position quantities in Ghostfolio match your actual holdings in Alpaca.
+
+### How It Works
+
+Alpaca charges fees on crypto trades that reduce the quantity you receive. The sync automatically:
+
+1. **Calculates your 30-day crypto trading volume** to determine your fee tier
+2. **Fetches order details** to determine if each order is a maker or taker order
+3. **Applies the correct fee rate** based on your tier and order type
+4. **Adjusts quantities** on BUY orders to match what you actually received
+
+### Fee Tier Structure
+
+| Tier | 30-Day Volume | Maker Fee | Taker Fee |
+|------|--------------|-----------|-----------|
+| 1 | $0 - $100K | 0.15% | 0.25% |
+| 2 | $100K - $500K | 0.12% | 0.22% |
+| 3 | $500K - $1M | 0.10% | 0.20% |
+| 4 | $1M - $10M | 0.08% | 0.18% |
+| 5 | $10M - $25M | 0.05% | 0.15% |
+| 6 | $25M - $50M | 0.02% | 0.12% |
+| 7 | $50M - $100M | 0.00% | 0.10% |
+| 8 | $100M+ | 0.00% | 0.08% |
+
+**Note:** Market orders = taker fee, Limit orders = maker fee (if they add liquidity)
+
+### Price Feed Variance
+
+Ghostfolio uses Yahoo Finance for crypto prices, while Alpaca uses their own market data. This can result in a small portfolio value difference (typically 0.5-1%, occasionally higher for low-liquidity coins). The quantities will always match exactly, but market values may differ slightly due to different price sources.
+
 ## Prerequisites
 
 - Python 3.11+ (for local running) or Docker

@@ -242,3 +242,30 @@ class AlpacaClient:
         else:
             logger.error(f"Failed to fetch orders: {response.status_code} - {response.text}")
             return []
+
+    def get_order(self, order_id: str) -> Dict:
+        """
+        Get a specific order by ID
+
+        Args:
+            order_id: The Alpaca order ID
+
+        Returns:
+            Order dictionary
+
+        Raises:
+            requests.HTTPError: If the order is not found
+        """
+        url = f"{self.base_url}/v2/orders/{order_id}"
+
+        logger.debug(f"Fetching order {order_id}...")
+
+        response = requests.get(url, headers=self.headers)
+
+        if response.status_code == 200:
+            order = response.json()
+            logger.debug(f"Fetched order {order_id}: type={order.get('type')}, status={order.get('status')}")
+            return order
+        else:
+            logger.error(f"Failed to fetch order {order_id}: {response.status_code} - {response.text}")
+            response.raise_for_status()
