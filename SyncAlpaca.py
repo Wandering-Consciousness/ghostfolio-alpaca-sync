@@ -107,10 +107,14 @@ class SyncAlpaca:
         logger.info("Starting Alpaca to Ghostfolio sync")
         logger.info("=" * 60)
 
-        # Step 1: Get or create Ghostfolio account
+        # Step 1: Get or create Alpaca platform (if not explicitly set)
+        if not self.ghost_platform_id:
+            self.ghost_platform_id = self._get_or_create_platform()
+
+        # Step 2: Get or create Ghostfolio account
         self.account_id = self._get_or_create_account()
 
-        # Step 2: Fetch Alpaca activities
+        # Step 3: Fetch Alpaca activities
         logger.info("\n--- Fetching activities from Alpaca ---")
         alpaca_activities = self._fetch_alpaca_activities(sync_days)
 
@@ -118,32 +122,61 @@ class SyncAlpaca:
             logger.info("No activities found in Alpaca")
             return
 
-        # Step 3: Transform activities to Ghostfolio format
+        # Step 4: Transform activities to Ghostfolio format
         logger.info("\n--- Transforming activities ---")
         ghostfolio_activities = self._transform_activities(alpaca_activities)
 
-        # Step 4: Get existing activities from Ghostfolio
+        # Step 5: Get existing activities from Ghostfolio
         logger.info("\n--- Fetching existing activities from Ghostfolio ---")
         existing_activities = self.ghostfolio.get_activities(accounts=[self.account_id])
 
-        # Step 5: Find new activities (deduplication)
+        # Step 6: Find new activities (deduplication)
         logger.info("\n--- Deduplicating activities ---")
         new_activities = self._deduplicate_activities(ghostfolio_activities, existing_activities)
 
         if not new_activities:
             logger.info("No new activities to import")
         else:
-            # Step 6: Import new activities
+            # Step 7: Import new activities
             logger.info(f"\n--- Importing {len(new_activities)} new activities ---")
             self._import_activities(new_activities)
 
-        # Step 7: Update account balance
+        # Step 8: Update account balance
         logger.info("\n--- Updating account balance ---")
         self._update_account_balance()
 
         logger.info("\n" + "=" * 60)
         logger.info("Sync completed successfully!")
         logger.info("=" * 60)
+
+    def _get_or_create_platform(self) -> Optional[str]:
+        """
+        Get existing Alpaca platform or create new one
+
+        Returns:
+            Platform ID or None
+        """
+        platform_name = "Alpaca"
+        platform_url = "https://alpaca.markets"
+
+        logger.info(f"Looking for platform: {platform_name}")
+
+        # Try to find existing platform
+        platform = self.ghostfolio.get_platform_by_name(platform_name)
+        if platform:
+            return platform['id']
+
+        # Create new platform if not found
+        logger.info(f"Platform not found, creating new platform: {platform_name}")
+        try:
+            platform_id = self.ghostfolio.create_platform(
+                name=platform_name,
+                url=platform_url
+            )
+            return platform_id
+        except Exception as e:
+            logger.warning(f"Failed to create platform: {e}")
+            return None
 
     def _get_or_create_account(self) -> str:
         """
