@@ -49,6 +49,7 @@ def main():
     ghost_key = get_env('GHOST_KEY')
     ghost_account_name = get_env('GHOST_ACCOUNT_NAME', 'Alpaca')
     ghost_currency = get_env('GHOST_CURRENCY', 'USD')
+    ghost_platform_id = get_env('GHOST_PLATFORM_ID', '')
 
     operation = get_env('OPERATION', SYNC_ALPACA)
 
@@ -80,6 +81,7 @@ def main():
             ghost_key=ghost_key,
             ghost_account_name=ghost_account_name,
             ghost_currency=ghost_currency,
+            ghost_platform_id=ghost_platform_id if ghost_platform_id else None,
             symbol_mapping=symbol_mapping
         )
     except Exception as e:

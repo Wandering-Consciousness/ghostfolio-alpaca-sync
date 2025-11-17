@@ -64,6 +64,7 @@ class SyncAlpaca:
         ghost_key: Optional[str] = None,
         ghost_account_name: str = "Alpaca",
         ghost_currency: str = "USD",
+        ghost_platform_id: Optional[str] = None,
         symbol_mapping: Optional[Dict[str, str]] = None
     ):
         """
@@ -78,6 +79,7 @@ class SyncAlpaca:
             ghost_key: Ghostfolio user key
             ghost_account_name: Name for the Ghostfolio account
             ghost_currency: Currency for the account
+            ghost_platform_id: Optional platform ID for the account
             symbol_mapping: Dict mapping Alpaca symbols to Ghostfolio symbols
         """
         self.alpaca = AlpacaClient(alpaca_api_key, alpaca_secret_key, alpaca_base_url)
@@ -85,6 +87,7 @@ class SyncAlpaca:
 
         self.ghost_account_name = ghost_account_name
         self.ghost_currency = ghost_currency
+        self.ghost_platform_id = ghost_platform_id
         self.symbol_mapping = symbol_mapping or {}
         self.account_id = None
 
@@ -159,7 +162,8 @@ class SyncAlpaca:
         logger.info(f"Account not found, creating new account: {self.ghost_account_name}")
         account_id = self.ghostfolio.create_account(
             name=self.ghost_account_name,
-            currency=self.ghost_currency
+            currency=self.ghost_currency,
+            platform_id=self.ghost_platform_id
         )
 
         return account_id
@@ -652,7 +656,8 @@ class SyncAlpaca:
                 account_id=self.account_id,
                 balance=cash,
                 currency=self.ghost_currency,
-                name=self.ghost_account_name
+                name=self.ghost_account_name,
+                platform_id=self.ghost_platform_id
             )
 
         except Exception as e:
