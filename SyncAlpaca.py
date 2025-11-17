@@ -87,6 +87,7 @@ class SyncAlpaca:
         self.ghost_currency = ghost_currency
         self.symbol_mapping = symbol_mapping or {}
         self.account_id = None
+        self.platform_id = None
 
         # Cache for crypto trading volume and order details
         self._crypto_volume_30d = None
@@ -104,10 +105,13 @@ class SyncAlpaca:
         logger.info("Starting Alpaca to Ghostfolio sync")
         logger.info("=" * 60)
 
-        # Step 1: Get or create Ghostfolio account
+        # Step 1: Get or create Alpaca platform
+        self.platform_id = self._get_or_create_platform()
+
+        # Step 2: Get or create Ghostfolio account
         self.account_id = self._get_or_create_account()
 
-        # Step 2: Fetch Alpaca activities
+        # Step 3: Fetch Alpaca activities
         logger.info("\n--- Fetching activities from Alpaca ---")
         alpaca_activities = self._fetch_alpaca_activities(sync_days)
 
@@ -115,32 +119,57 @@ class SyncAlpaca:
             logger.info("No activities found in Alpaca")
             return
 
-        # Step 3: Transform activities to Ghostfolio format
+        # Step 4: Transform activities to Ghostfolio format
         logger.info("\n--- Transforming activities ---")
         ghostfolio_activities = self._transform_activities(alpaca_activities)
 
-        # Step 4: Get existing activities from Ghostfolio
+        # Step 5: Get existing activities from Ghostfolio
         logger.info("\n--- Fetching existing activities from Ghostfolio ---")
         existing_activities = self.ghostfolio.get_activities(accounts=[self.account_id])
 
-        # Step 5: Find new activities (deduplication)
+        # Step 6: Find new activities (deduplication)
         logger.info("\n--- Deduplicating activities ---")
         new_activities = self._deduplicate_activities(ghostfolio_activities, existing_activities)
 
         if not new_activities:
             logger.info("No new activities to import")
         else:
-            # Step 6: Import new activities
+            # Step 7: Import new activities
             logger.info(f"\n--- Importing {len(new_activities)} new activities ---")
             self._import_activities(new_activities)
 
-        # Step 7: Update account balance
+        # Step 8: Update account balance
         logger.info("\n--- Updating account balance ---")
         self._update_account_balance()
 
         logger.info("\n" + "=" * 60)
         logger.info("Sync completed successfully!")
         logger.info("=" * 60)
+
+    def _get_or_create_platform(self) -> str:
+        """
+        Get existing Alpaca platform or create new one
+
+        Returns:
+            Platform ID
+        """
+        platform_name = "Alpaca"
+        platform_url = "https://alpaca.markets"
+
+        logger.info(f"Looking for platform: {platform_name}")
+
+        platform = self.ghostfolio.get_platform_by_name(platform_name)
+
+        if platform:
+            return platform['id']
+
+        logger.info(f"Platform not found, creating new platform: {platform_name}")
+        platform_id = self.ghostfolio.create_platform(
+            name=platform_name,
+            url=platform_url
+        )
+
+        return platform_id
 
     def _get_or_create_account(self) -> str:
         """
@@ -159,7 +188,8 @@ class SyncAlpaca:
         logger.info(f"Account not found, creating new account: {self.ghost_account_name}")
         account_id = self.ghostfolio.create_account(
             name=self.ghost_account_name,
-            currency=self.ghost_currency
+            currency=self.ghost_currency,
+            platform_id=self.platform_id
         )
 
         return account_id
@@ -652,7 +682,8 @@ class SyncAlpaca:
                 account_id=self.account_id,
                 balance=cash,
                 currency=self.ghost_currency,
-                name=self.ghost_account_name
+                name=self.ghost_account_name,
+                platform_id=self.platform_id
             )
 
         except Exception as e:
